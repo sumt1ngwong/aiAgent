@@ -1,5 +1,6 @@
 import os 
 import subprocess
+from google.genai import types
 
 def run_python_file(working_directory, file_path):
     full_path = os.path.join(working_directory, file_path)
@@ -28,3 +29,23 @@ def run_python_file(working_directory, file_path):
                         
         except Exception as e:
             return f"Error: executing Python file: {e}"
+
+schema_run_python_file = types.FunctionDeclaration(
+    name="run_python_file",
+    description="Executes a Python file within the working directory and returns the output from the interpreter.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "file_path": types.Schema(
+                type=types.Type.STRING,
+                description="The file path of the file in respect to the working directory.",
+            ),
+        },
+    ),
+)
+
+available_functions_p = types.Tool(
+    function_declarations=[
+        schema_run_python_file,
+    ]
+)

@@ -4,6 +4,9 @@ from google import genai
 from google.genai import types
 import sys
 from functions.get_files_info import *
+from functions.get_file_content import *
+from functions.write_file import *
+from functions.run_python_file import *
 
 def main():
     system_prompt = """
@@ -12,6 +15,9 @@ def main():
         When a user asks a question or makes a request, make a function call plan. You can perform the following operations:
 
         - List files and directories
+        - Read file contents
+        - Execute Python files with optional arguments
+        - Write or overwrite files
 
         All paths you provide should be relative to the working directory. You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
     """
@@ -34,7 +40,7 @@ def main():
         model="gemini-2.0-flash-001", 
         contents=messages,
         config=types.GenerateContentConfig(
-            tools=[available_functions], system_instruction=system_prompt))
+            tools=[available_functions_i, available_functions_c, available_functions_p, available_functions_w ], system_instruction=system_prompt))
     
     function_call_part = response.function_calls
 
