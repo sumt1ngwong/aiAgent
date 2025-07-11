@@ -47,5 +47,3 @@ available_functions_c = types.Tool(
     ]
 )
 
-
-###NEED TO FIX SCHEMAS

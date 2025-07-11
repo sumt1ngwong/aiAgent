@@ -3,12 +3,16 @@ from dotenv import load_dotenv
 from google import genai 
 from google.genai import types
 import sys
+from functions.call_function import *
 from functions.get_files_info import *
 from functions.get_file_content import *
 from functions.write_file import *
 from functions.run_python_file import *
 
 def main():
+
+    is_verbose = "--verbose" in sys.argv
+
     system_prompt = """
         You are a helpful AI coding agent.
 
@@ -46,7 +50,19 @@ def main():
 
     if function_call_part:
         for func in function_call_part:
-            print(f"Calling function: {func.name}({func.args})")
+            function_call_result = call_function(func, is_verbose)
+
+            if not function_call_result.parts:
+                raise Exception("No parts returned from call_function.")
+
+            first_part = function_call_result.parts[0]
+
+            if not hasattr(first_part, "function_response") or not hasattr(first_part.function_response, "response"):
+                raise Exception("Missing function_response or response in result.")
+
+            if is_verbose:
+                print(f"-> {first_part.function_response.response}")
+
     else:
         print(response.text)
 
@@ -56,8 +72,6 @@ def main():
         print("Prompt tokens:", response.usage_metadata.prompt_token_count)
         print("Response tokens:", response.usage_metadata.candidates_token_count)
         
-
-
 
 if __name__ == "__main__":
     main()
