@@ -39,33 +39,60 @@ def main():
         types.Content(role="user", parts=[types.Part(text=user_prompt)]),
     ]
 
-    # contents = input("Contents for LLM: ")
-    response = client.models.generate_content(
-        model="gemini-2.0-flash-001", 
-        contents=messages,
-        config=types.GenerateContentConfig(
-            tools=[available_functions_i, available_functions_c, available_functions_p, available_functions_w ], system_instruction=system_prompt))
-    
-    function_call_part = response.function_calls
+    i = 0 
+    while i < 20:
+        try:
+            # contents = input("Contents for LLM: ")
+            response = client.models.generate_content(
+                model="gemini-2.0-flash-001", 
+                contents=messages,
+                config=types.GenerateContentConfig(
+                    tools=[available_functions_i, available_functions_c, available_functions_p, available_functions_w ], system_instruction=system_prompt))
 
-    if function_call_part:
-        for func in function_call_part:
-            function_call_result = call_function(func, is_verbose)
+            for candidate in response.candidates:
+                messages.append(candidate.content)
 
-            if not function_call_result.parts:
-                raise Exception("No parts returned from call_function.")
+            final_text = response.candidates[0].content.parts[0].text
+            if final_text and not response.function_calls:
+                print(final_text)
+                break
+        
 
-            first_part = function_call_result.parts[0]
+            function_call_part = response.function_calls
 
-            if not hasattr(first_part, "function_response") or not hasattr(first_part.function_response, "response"):
-                raise Exception("Missing function_response or response in result.")
 
-            if is_verbose:
-                print(f"-> {first_part.function_response.response}")
+            if function_call_part:
+                for func in function_call_part:
+                    function_call_result = call_function(func, is_verbose)
+                    print(function_call_result)
+                    
+                    if not function_call_result.parts:
+                        raise Exception("No parts returned from call_function.")
+                        
 
-    else:
-        print(response.text)
+                    first_part = function_call_result.parts[0]
 
+                    if not hasattr(first_part, "function_response") or not hasattr(first_part.function_response, "response"):
+                        raise Exception("Missing function_response or response in result.")
+
+                    if is_verbose:
+                        print(f"-> {first_part.function_response.response}")
+
+                    i += 1
+                    messages.append(function_call_result)
+            else:
+                # If no final text and no function calls, what should happen?
+                # Perhaps print a message and break to prevent an infinite loop.
+                print("LLM did not provide a final response or function call. Breaking.")
+                break
+
+            i += 1
+
+        except Exception as e:
+                print("Error", e)
+                break
+
+  
 
     if "--verbose" in sys.argv:
         print("User prompt:", user_prompt)
